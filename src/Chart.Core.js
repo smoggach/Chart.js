@@ -426,6 +426,10 @@
 				}
 			}
 
+			if ((numberOfSteps - 1) * stepValue >= maxValue) {
+				numberOfSteps--;
+			}
+
 			if (skipFitting){
 				numberOfSteps = minSteps;
 				stepValue = graphRange / numberOfSteps;
