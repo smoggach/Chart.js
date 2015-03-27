@@ -452,8 +452,8 @@
 			// If templateString is function rather than string-template - call the function for valuesObject
 
 			if(templateString instanceof Function){
-			 	return templateString(valuesObject);
-		 	}
+				return templateString(valuesObject);
+			}
 
 			var cache = {};
 			function tmpl(str, data){
@@ -3065,7 +3065,7 @@
 			helpers.each(this.segments,function(segment){
 				segment.save();
 			});
-			
+
 			this.reflow();
 			this.render();
 		},
@@ -3550,12 +3550,20 @@
 				},
 				calculateBarHeight : function(datasets, dsIndex, barIndex, value) {
 					var sum = 0;
+					var nonzero = false;
 
 					for(var i = 0; i < datasets.length; i++) {
 						sum += datasets[i].bars[barIndex].value;
+						if (datasets[i].bars[barIndex].value !== 0)
+							nonzero = true;
 					}
 
-					if(!value) {
+					// fix the case where negative values cause a sum of 0
+					// and render inappropriately
+					if (sum <= 0 && nonzero){
+						value = 0;
+					}
+					else if(!value) {
 						value = datasets[dsIndex].bars[barIndex].value;
 					}
 
@@ -3623,13 +3631,33 @@
 
 			this.buildScale(data.labels);
 
+			if (options.swappedBars.length > 0) {
+				for (var i = 0; i < options.swappedBars.length; i++) {
+					var leftBar = this.datasets[0].bars[options.swappedBars[i]];
+					var rightBar = this.datasets[1].bars[options.swappedBars[i]];
+
+					var swap = leftBar.fillColor;
+					leftBar.fillColor = rightBar.fillColor;
+					rightBar.fillColor = swap;
+
+					swap = leftBar.highlightFill;
+					leftBar.highlightFill = rightBar.highlightFill;
+					rightBar.highlightFill = swap;
+
+					swap = leftBar.datasetLabel;
+					leftBar.datasetLabel = rightBar.datasetLabel;
+					rightBar.datasetLabel = swap;
+				}
+			}
+
 			this.eachBars(function(bar, index, datasetIndex){
 				helpers.extend(bar, {
 					base: this.scale.endPoint,
 					height: 0,
 					width : this.scale.calculateBarWidth(this.datasets.length),
 					x: this.scale.calculateBarX(index),
-					y: this.scale.endPoint
+					y: this.scale.endPoint,
+					index: index
 				});
 				bar.save();
 			}, this);
